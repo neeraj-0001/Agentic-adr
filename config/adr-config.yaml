@@ -1,0 +1,64 @@
+version: '1.0'
+
+adr:
+  server:
+    host: '0.0.0.0'
+    port: 8080
+    cors_enabled: true
+
+  telemetry:
+    otel_endpoint: 'http://localhost:4317'
+    batch_size: 100
+    flush_interval_seconds: 5
+
+  storage:
+    clickhouse:
+      host: 'localhost'
+      port: 8123
+      database: 'agentic_adr'
+      user: 'default'
+      password: ''
+      retention_days: 30
+
+  kill_switch:
+    enabled: true
+    cilium_namespace: 'default'
+    response_time_budget_ms: 500
+    honeypot_enabled: true
+    auto_contain: true
+
+  guardrails:
+    pii_detection:
+      enabled: true
+      canary_markers: true
+      structured_detection: true
+      llm_judge_enabled: false
+    prompt_injection:
+      enabled: true
+      blocking_mode: true
+      indirect_injection_detection: true
+    behavioral_drift:
+      enabled: true
+      baseline_threshold: 0.7
+      check_interval_seconds: 60
+
+  boundary_tracing:
+    enabled: true
+    event_buffer_size: 10000
+    suspicious_processes:
+      - '/bin/sh'
+      - '/bin/bash'
+      - 'curl'
+      - 'wget'
+      - 'nc'
+      - 'ncat'
+      - 'kubectl'
+    suspicious_ports:
+      - 4444
+      - 5555
+
+  monitoring:
+    max_loop_count: 10
+    max_cost_usd: 100.0
+    max_duration_seconds: 300
+    max_network_connections: 50

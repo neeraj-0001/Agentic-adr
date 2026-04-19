@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  agentic-adr:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    ports:
+      - '8080:8080'
+    environment:
+      - OTEL_ENDPOINT=http://otel-collector:4317
+      - CLICKHOUSE_HOST=clickhouse
+      - CLICKHOUSE_PORT=8123
+      - KILLSWITCH_ENABLED=true
+      - CILIUM_NAMESPACE=default
+    depends_on:
+      - clickhouse
+      - otel-collector
+    volumes:
+      - ./config:/app/config
+    networks:
+      - agentic-network
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:23.8
+    ports:
+      - '8123:8123'
+      - '9000:9000'
+    environment:
+      - CLICKHOUSE_DB=agentic_adr
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+    networks:
+      - agentic-network
+
+  otel-collector:
+    image: otel/opentelemetry-collector:0.91.0
+    command: ['--config=/etc/otel-collector-config.yaml']
+    volumes:
+      - ./config/otel-collector.yaml:/etc/otel-collector-config.yaml
+    ports:
+      - '4317:4317'
+      - '4318:4318'
+    networks:
+      - agentic-network
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.52
+    ports:
+      - '16686:16686'
+      - '14268:14268'
+    environment:
+      - COLLECTOR_OTLP_ENDPOINT=http://otel-collector:4317
+    networks:
+      - agentic-network
+
+volumes:
+  clickhouse-data:
+
+networks:
+  agentic-network:
+    driver: bridge
